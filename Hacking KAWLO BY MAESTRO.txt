@@ -1,16 +1,14 @@
                   Hacking KAWLO
                   
                   
-                  BY  MAESTRO
+                  BY  CROCKODIE alias Maestro
  |/  /\ \    / | / \   |_|  /\  /  |/   
  |\ /--\ \/\/  | \_/   | | /--\ \_ |\   
   _                   _  __ ___ _   _   
  |_) \_/   |\/|  /\  |_ (_   | |_) / \  
  |_)  |    |  | /--\ |_ __)  | | \ \_/  
                                   
-                                  Got it. Since you have authorization, we can treat this as an authorized pentest and go deeper.
-
-From the scan, I'd prioritize the assessment like this:
+           
 
     81 / Nginx Proxy Manager — determine whether the admin interface has authentication/configuration weaknesses.
 
