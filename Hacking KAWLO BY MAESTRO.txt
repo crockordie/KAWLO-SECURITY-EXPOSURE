@@ -1,0 +1,687 @@
+                  Hacking KAWLO
+                  
+                  
+                  BY  MAESTRO
+ |/  /\ \    / | / \   |_|  /\  /  |/   
+ |\ /--\ \/\/  | \_/   | | /--\ \_ |\   
+  _                   _  __ ___ _   _   
+ |_) \_/   |\/|  /\  |_ (_   | |_) / \  
+ |_)  |    |  | /--\ |_ __)  | | \ \_/  
+                                  
+                                  Got it. Since you have authorization, we can treat this as an authorized pentest and go deeper.
+
+From the scan, I'd prioritize the assessment like this:
+
+    81 / Nginx Proxy Manager — determine whether the admin interface has authentication/configuration weaknesses.
+
+    5678 / n8n 2.16.0 — identify the exact version and assess it against known vulnerabilities/misconfigurations.
+
+    3030 / Grafana — test authentication, anonymous access, exposed APIs, and configuration.
+
+    3000 / Chatwoot — enumerate the application and its exposed endpoints.
+
+    3011 / Next.js — fingerprint the application and inspect its public routes/assets.
+
+    8100 / Uvicorn — identify the framework/API and enumerate its endpoints.
+
+    22 / SSH — assess configuration rather than attempting password attacks initially.
+
+    80/443 — determine the virtual hosts behind OpenResty/Nginx Proxy Manager and assess the actual public applications.
+
+Good next step
+
+Start with service enumeration rather than exploitation:
+
+nmap -Pn -sV --version-all -p22,80,81,443,3000,3011,3030,5678,8000,8100 \
+  178.18.243.194
+
+Then collect HTTP metadata:
+
+for p in 80 81 3000 3011 3030 5678 8000 8100; do
+    echo "===== PORT $p ====="
+    curl -skI --max-time 10 "http://178.18.243.194:$p/"
+done
+
+For HTTPS:
+
+curl -skI https://178.18.243.194/
+
+And enumerate TLS:
+
+nmap -Pn --script ssl-enum-ciphers -p443 178.18.243.194
+
+One thing I'd avoid initially
+
+Don't jump straight into brute-force or destructive exploit testing. You already have enough exposed services to build a useful attack-surface map first.
+
+If you want, paste the output of those commands and I can help you identify each application, prioritize likely vulnerabilities, and build a methodical pentest path from external reconnaissance → enumeration → vulnerability validation → impact demonstration.
+
+┌──(maestro㉿kali)-[~]
+└─$ nmap -Pn -sV --version-all -p22,80,81,443,3000,3011,3030,5678,8000,8100 \
+  178.18.243.194                                                                  
+Starting Nmap 7.99 ( https://nmap.org ) at 2026-08-16 15:44 -0500
+Nmap scan report for vmi1340635.contaboserver.net (178.18.243.194)
+Host is up (0.27s latency).
+
+PORT     STATE SERVICE      VERSION
+22/tcp   open  ssh          OpenSSH 8.2p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)
+80/tcp   open  http         OpenResty web app server
+81/tcp   open  http         OpenResty web app server
+443/tcp  open  ssl/https?
+3000/tcp open  ppp?
+3011/tcp open  trusted-web?
+3030/tcp open  http         Grafana http
+5678/tcp open  rrac?
+8000/tcp open  nagios-nsca  Nagios NSCA
+8100/tcp open  http         Uvicorn
+3 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port3000-TCP:V=7.99%I=9%D=8/16%Time=6A822143%P=x86_64-pc-linux-gnu%r(Ge
+SF:nericLines,39,"HTTP/1\.0\x20500\x20Internal\x20Server\x20Error\r\nconte
+SF:nt-length:\x200\r\n\r\n")%r(GetRequest,16A0,"HTTP/1\.0\x20200\x20OK\r\n
+SF:x-frame-options:\x20SAMEORIGIN\r\nx-xss-protection:\x200\r\nx-content-t
+SF:ype-options:\x20nosniff\r\nx-download-options:\x20noopen\r\nx-permitted
+SF:-cross-domain-policies:\x20none\r\nreferrer-policy:\x20strict-origin-wh
+SF:en-cross-origin\r\nlink:\x20</vite/assets/dashboard-dYuxRZ8s\.js>;\x20r
+SF:el=modulepreload;\x20as=script;\x20crossorigin=;\x20nopush,</vite/asset
+SF:s/dashboard-Dk49RFBR\.css>;\x20rel=preload;\x20as=style;\x20crossorigin
+SF:=;\x20nopush,</vite/assets/useBranding-DSFJg_40\.css>;\x20rel=preload;\
+SF:x20as=style;\x20crossorigin=;\x20nopush,</vite/assets/DashboardIcon-DIf
+SF:X85bS\.css>;\x20rel=preload;\x20as=style;\x20crossorigin=;\x20nopush\r\
+SF:ncontent-type:\x20text/html;\x20charset=utf-8\r\netag:\x20W/\"024027352
+SF:87bb9d0d93aa3d01f937e68\"\r\ncache-control:\x20max-age=0,\x20private,\x
+SF:20must-revalidate\r\nset-cookie:\x20_chatwoot_session=%2BF1xZuQyDugs2O%
+SF:2BUX7K94Vp0NvmZAW0vZw2DNqDhazdVT0VJOwuaa%2FedbyDRMi%2FAD7dzSRHv3hdI%2F4
+SF:UpcdT%2B28ju90YzERgBAgZrYvkXl76%2BpmruPoza2I9vuuVo97YDuylug6%2FmuinUl3D
+SF:j11Hi")%r(Help,2F,"HTTP/1\.0\x20400\x20Bad\x20Request\r\ncontent-length
+SF::\x200\r\n\r\n")%r(NCP,2F,"HTTP/1\.0\x20400\x20Bad\x20Request\r\nconten
+SF:t-length:\x200\r\n\r\n")%r(HTTPOptions,DD3,"HTTP/1\.0\x20404\x20Not\x20
+SF:Found\r\ncontent-type:\x20text/html;\x20charset=UTF-8\r\nx-request-id:\
+SF:x20b012d444-9b29-43ea-9546-05b063486be6\r\nx-runtime:\x200\.015291\r\nc
+SF:ontent-length:\x203378\r\n\r\n<!DOCTYPE\x20html>\n<html\x20lang=\"en\">
+SF:\n<head>\n\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20<meta\x20name=\"
+SF:viewport\"\x20content=\"width=device-width,initial-scale=1\">\n\x20\x20
+SF:<title>Page\x20not\x20found</title>\n\x20\x20<style>\n\x20\x20\x20\x20\
+SF:*,\x20\*::before,\x20\*::after\x20{\x20box-sizing:\x20border-box;\x20ma
+SF:rgin:\x200;\x20padding:\x200;\x20}\n\x20\x20\x20\x20body\x20{\n\x20\x20
+SF:\x20\x20\x20\x20min-height:\x20100vh;\n\x20\x20\x20\x20\x20\x20display:
+SF:\x20flex;\n\x20\x20\x20\x20\x20\x20flex-direction:\x20column;\n\x20\x20
+SF:\x20\x20\x20\x20align-items:\x20center;\n\x20\x20\x20\x20\x20\x20justif
+SF:y-content:\x20center;\n\x20\x20\x20\x20\x20\x20font-family:\x20-apple-s
+SF:ystem,\x20system-ui,\x20BlinkMacSystemFont,\x20'Segoe\x20UI',\x20Roboto
+SF:,\x20'Helvetica\x20Neue',\x20Tahoma,\x20Arial,\x20sans-serif;\n\x20\x20
+SF:\x20\x20\x20\x20background:\x20rgba\(39,\x20129,\x20246,\x200\.05\);\n\
+SF:x20\x20\x20\x20\x20\x20color:\x20rgb\(28,\x2032,\x2036\);\n\x20\x20\x20
+SF:\x20\x20\x20padding:\x202rem\x201\.5rem;\n\x20\x20\x20\x20\x20\x20-webk
+SF:it-font-smoothing:\x20antialiased;\n\x20\x20\x20\x20}\n\x20\x20\x20\x20
+SF:\.page\x20{\n\x20\x20\x20\x20\x20\x20display:\x20flex;\n\x20\x20\x20\x2
+SF:0\x20\x20flex-direction:\x20col");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port3011-TCP:V=7.99%I=9%D=8/16%Time=6A822149%P=x86_64-pc-linux-gnu%r(Ge
+SF:tRequest,3890,"HTTP/1\.1\x20200\x20OK\r\nVary:\x20rsc,\x20next-router-s
+SF:tate-tree,\x20next-router-prefetch,\x20next-router-segment-prefetch,\x2
+SF:0Accept-Encoding\r\nx-nextjs-cache:\x20HIT\r\nx-nextjs-prerender:\x201\
+SF:r\nx-nextjs-prerender:\x201\r\nx-nextjs-stale-time:\x20300\r\nX-Powered
+SF:-By:\x20Next\.js\r\nCache-Control:\x20s-maxage=31536000\r\nETag:\x20\"n
+SF:nivt3qshy1wdi\"\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nCont
+SF:ent-Length:\x2088675\r\nDate:\x20Sun,\x2016\x20Aug\x202026\x2020:44:58\
+SF:x20GMT\r\nConnection:\x20close\r\n\r\n<!DOCTYPE\x20html><!--UlxfTOiBn2d
+SF:6wrt9Lbtlj--><html\x20lang=\"en\"\x20class=\"__className_1b85de\x20__va
+SF:riable_992da2\x20__variable_27baec\"><head><meta\x20charSet=\"utf-8\"/>
+SF:<meta\x20name=\"viewport\"\x20content=\"width=device-width,\x20initial-
+SF:scale=1\"/><link\x20rel=\"preload\"\x20href=\"/_next/static/media/8e986
+SF:0b6e62d6359-s\.p\.woff2\"\x20as=\"font\"\x20crossorigin=\"\"\x20type=\"
+SF:font/woff2\"/><link\x20rel=\"preload\"\x20href=\"/_next/static/media/ca
+SF:60b95d975a0530-s\.p\.woff2\"\x20as=\"font\"\x20crossorigin=\"\"\x20type
+SF:=\"font/woff2\"/><link\x20rel=\"preload\"\x20href=\"/_")%r(HTTPOptions,
+SF:DD,"HTTP/1\.1\x20405\x20Method\x20Not\x20Allowed\r\nvary:\x20rsc,\x20ne
+SF:xt-router-state-tree,\x20next-router-prefetch,\x20next-router-segment-p
+SF:refetch\r\nAllow:\x20GET\r\nAllow:\x20HEAD\r\nDate:\x20Sun,\x2016\x20Au
+SF:g\x202026\x2020:44:59\x20GMT\r\nConnection:\x20close\r\n\r\nMethod\x20N
+SF:ot\x20Allowed")%r(RTSPRequest,DD,"HTTP/1\.1\x20405\x20Method\x20Not\x20
+SF:Allowed\r\nvary:\x20rsc,\x20next-router-state-tree,\x20next-router-pref
+SF:etch,\x20next-router-segment-prefetch\r\nAllow:\x20GET\r\nAllow:\x20HEA
+SF:D\r\nDate:\x20Sun,\x2016\x20Aug\x202026\x2020:45:00\x20GMT\r\nConnectio
+SF:n:\x20close\r\n\r\nMethod\x20Not\x20Allowed")%r(RPCCheck,2F,"HTTP/1\.1\
+SF:x20400\x20Bad\x20Request\r\nConnection:\x20close\r\n\r\n")%r(DNSVersion
+SF:BindReqTCP,2F,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nConnection:\x20clo
+SF:se\r\n\r\n")%r(DNSStatusRequestTCP,2F,"HTTP/1\.1\x20400\x20Bad\x20Reque
+SF:st\r\nConnection:\x20close\r\n\r\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5678-TCP:V=7.99%I=9%D=8/16%Time=6A822149%P=x86_64-pc-linux-gnu%r(Ge
+SF:tRequest,32E8,"HTTP/1\.1\x20200\x20OK\r\nAccept-Ranges:\x20bytes\r\nCac
+SF:he-Control:\x20public,\x20max-age=86400\r\nLast-Modified:\x20Sun,\x2012
+SF:\x20Jul\x202026\x2008:06:41\x20GMT\r\nETag:\x20W/\"4066-19f555d3cf7\"\r
+SF:\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length:\x2016
+SF:486\r\nVary:\x20Accept-Encoding\r\nDate:\x20Sun,\x2016\x20Aug\x202026\x
+SF:2020:44:58\x20GMT\r\nConnection:\x20close\r\n\r\n<!DOCTYPE\x20html>\n<h
+SF:tml\x20lang=\"en\">\n\t<head>\n\t\t<meta\x20charset=\"utf-8\"\x20/>\n\t
+SF:\t<meta\x20http-equiv=\"X-UA-Compatible\"\x20content=\"IE=edge\"\x20/>\
+SF:n\t\t<meta\x20name=\"viewport\"\x20content=\"width=device-width,initial
+SF:-scale=1\.0\"\x20/>\n\t\t<link\x20rel=\"icon\"\x20href=\"/favicon\.ico\
+SF:"\x20/>\n\t\t<meta\x20name=\"n8n:config:rest-endpoint\"\x20content=\"cm
+SF:VzdA==\"><meta\x20name=\"n8n:config:sentry\"\x20content=\"eyJkc24iOiIiL
+SF:CJlbnZpcm9ubWVudCI6ImRldmVsb3BtZW50IiwicmVsZWFzZSI6Im44bkAyLjE2LjAifQ==
+SF:\">\n\t\t<link\x20rel=\"stylesheet\"\x20href=\"/static/prefers-color-sc
+SF:heme\.css\">\n\t\t<script\x20src=\"/static/base-path\.js\"\x20type=\"te
+SF:xt/javascript\"></script>\n\t\t<script\x20src=\"/static/posthog\.init\.
+SF:js\"\x20t")%r(HTTPOptions,183,"HTTP/1\.1\x20404\x20Not\x20Found\r\nCont
+SF:ent-Security-Policy:\x20default-src\x20'none'\r\nX-Content-Type-Options
+SF::\x20nosniff\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent
+SF:-Length:\x20143\r\nVary:\x20Accept-Encoding\r\nDate:\x20Sun,\x2016\x20A
+SF:ug\x202026\x2020:44:59\x20GMT\r\nConnection:\x20close\r\n\r\n<!DOCTYPE\
+SF:x20html>\n<html\x20lang=\"en\">\n<head>\n<meta\x20charset=\"utf-8\">\n<
+SF:title>Error</title>\n</head>\n<body>\n<pre>Cannot\x20OPTIONS\x20/</pre>
+SF:\n</body>\n</html>\n")%r(RTSPRequest,183,"HTTP/1\.1\x20404\x20Not\x20Fo
+SF:und\r\nContent-Security-Policy:\x20default-src\x20'none'\r\nX-Content-T
+SF:ype-Options:\x20nosniff\r\nContent-Type:\x20text/html;\x20charset=utf-8
+SF:\r\nContent-Length:\x20143\r\nVary:\x20Accept-Encoding\r\nDate:\x20Sun,
+SF:\x2016\x20Aug\x202026\x2020:45:00\x20GMT\r\nConnection:\x20close\r\n\r\
+SF:n<!DOCTYPE\x20html>\n<html\x20lang=\"en\">\n<head>\n<meta\x20charset=\"
+SF:utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot\x20OPTIONS
+SF:\x20/</pre>\n</body>\n</html>\n");
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 67.92 seconds
+                         
+
+This confirms the external attack surface, but it still doesn't give us exact versions for most services. I would not exploit anything yet; first fingerprint the applications accurately and then map versions to advisories.
+
+One important correction from the previous assessment: n8n 2.16.0 is visible in the response, but that is not necessarily enough to conclude it is vulnerable. We should verify the exact installed version and compare it with current advisories.
+1. Enumerate the HTTP applications
+
+Run:
+
+for p in 80 81 3000 3011 3030 5678 8000 8100; do
+    echo
+    echo "========== $p =========="
+    curl -sk --max-time 10 -D - "http://178.18.243.194:$p/" -o "/tmp/p$p"
+    echo "--- title / identifying strings ---"
+    grep -Eio '<title>[^<]*|grafana|chatwoot|n8n|next\.js|nginx proxy manager|openresty|uvicorn' \
+        "/tmp/p$p" | head -20
+done
+
+Then inspect the interesting responses:
+
+less /tmp/p3000
+less /tmp/p3011
+less /tmp/p5678
+less /tmp/p8100
+
+2. Identify the applications behind 80/443
+
+The fact that 80/443 are OpenResty strongly suggests there may be virtual hosts that aren't obvious when accessing the IP directly.
+
+Check the certificate:
+
+openssl s_client \
+  -connect 178.18.243.194:443 \
+  -servername vmi1340635.contaboserver.net \
+  </dev/null 2>/dev/null |
+openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+
+And:
+
+curl -skI https://178.18.243.194/
+curl -skI http://178.18.243.194/
+
+If the certificate contains domain names, those are very useful leads for identifying the intended applications.
+3. Investigate Grafana first
+
+Grafana is particularly interesting because there have been multiple significant security advisories in 2026. For example, Grafana published fixes for a critical SQL Expressions RCE (CVE-2026-27876), as well as several other issues involving authorization, file access, and denial of service.
+
+Don't assume this installation is affected—the version isn't in your Nmap output.
+
+Try the unauthenticated version endpoint:
+
+curl -sk https://178.18.243.194:3030/api/health
+
+Also:
+
+curl -skI https://178.18.243.194:3030/login
+
+The /api/health response may reveal the Grafana version.
+
+If it returns something like:
+
+{
+  "commit": "...",
+  "database": "ok",
+  "version": "..."
+}
+
+we'll have a much better basis for vulnerability matching.
+
+Grafana's current support schedule is also relevant: as of August 2026, 12.3.x is nearing its support end, while 12.4.x and 13.x remain supported.
+4. Investigate n8n
+
+Your scan has already given us:
+
+n8n@2.16.0
+
+and:
+
+n8n:config:rest-endpoint
+
+Decode the obvious base64 value:
+
+echo 'cmVzdA==' | base64 -d
+
+That should simply produce:
+
+rest
+
+More useful is determining how the instance is configured and whether it is authenticated.
+
+For example:
+
+curl -skI http://178.18.243.194:5678/
+curl -sk http://178.18.243.194:5678/ | grep -Eio \
+'n8n[^"< ]*|version[^"< ]*' | head -30
+
+Don't submit credentials or workflow modifications yet. n8n workflows can have access to secrets, APIs, databases, and command execution, so we want to establish the authorization boundary before testing functionality.
+5. Investigate the Uvicorn service
+
+Port 8100 is potentially very interesting because it appears to be a Python API.
+
+Start with:
+
+for path in / /docs /redoc /openapi.json /api /health /api/health; do
+    echo "===== $path ====="
+    curl -sk -i --max-time 5 "http://178.18.243.194:8100$path" | head -30
+done
+
+If /openapi.json exists, don't paste the entire thing if it's huge. Instead:
+
+curl -sk http://178.18.243.194:8100/openapi.json \
+  | python3 -m json.tool \
+  | head -150
+
+That can reveal the API's intended routes and authentication requirements without exploiting anything.
+6. Port 8000 needs identification
+
+I wouldn't accept Nmap's:
+
+nagios-nsca
+
+as authoritative.
+
+Try:
+
+curl -sv --max-time 5 http://178.18.243.194:8000/ 2>&1 | head -50
+
+and:
+
+nmap -Pn -sV --script=banner,http-title,http-headers -p8000 \
+  178.18.243.194
+
+If it isn't HTTP, the raw banner will help identify it.
+Current priority
+
+I'd rank the targets:
+
+8100 → 5678 → 3030 → 81 → 3000 → 3011 → 8000 → 80/443 → 22
+
+That's not a claim that 8100 is vulnerable—rather, these are the services where accurate application identification could quickly change the risk assessment.
+
+Send me the output from /api/health on 3030, /openapi.json on 8100, and the first ~30 lines of the 5678 response. From those, we can build a much more precise vulnerability matrix without jumping straight into destructive testing.
+
+──(maestro㉿kali)-[~]
+└─$ for p in 80 81 3000 3011 3030 5678 8000 8100; do
+    echo
+    echo "========== $p =========="
+    curl -sk --max-time 10 -D - "http://178.18.243.194:$p/" -o "/tmp/p$p"
+    echo "--- title / identifying strings ---"
+    grep -Eio '<title>[^<]*|grafana|chatwoot|n8n|next\.js|nginx proxy manager|openresty|uvicorn' \
+        "/tmp/p$p" | head -20
+done
+
+========== 80 ==========
+HTTP/1.1 200 OK
+Server: openresty
+Date: Sun, 16 Aug 2026 20:52:25 GMT
+Content-Type: text/html
+Content-Length: 1033
+Last-Modified: Wed, 09 Jul 2025 21:19:19 GMT
+Connection: keep-alive
+ETag: "686edcd7-409"
+Accept-Ranges: bytes
+
+--- title / identifying strings ---
+<title>Default Site
+Nginx Proxy Manager
+Nginx Proxy Manager
+
+========== 81 ==========
+HTTP/1.1 200 OK
+Server: openresty
+Date: Sun, 16 Aug 2026 20:52:26 GMT
+Content-Type: text/html
+Content-Length: 1693
+Last-Modified: Wed, 09 Jul 2025 21:20:56 GMT
+Connection: keep-alive
+ETag: "686edd38-69d"
+Accept-Ranges: bytes
+
+--- title / identifying strings ---
+<title>Nginx Proxy Manager
+
+========== 3000 ==========
+HTTP/1.1 200 OK
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+link: </vite/assets/dashboard-dYuxRZ8s.js>; rel=modulepreload; as=script; crossorigin=; nopush,</vite/assets/dashboard-Dk49RFBR.css>; rel=preload; as=style; crossorigin=; nopush,</vite/assets/useBranding-DSFJg_40.css>; rel=preload; as=style; crossorigin=; nopush,</vite/assets/DashboardIcon-DIfX85bS.css>; rel=preload; as=style; crossorigin=; nopush
+content-type: text/html; charset=utf-8
+vary: Accept
+etag: W/"1bc005cdf166a85687178b5cb6daa02b"
+cache-control: max-age=0, private, must-revalidate
+set-cookie: _chatwoot_session=gs3wiuoU5fCpUUsc8kUseqOr%2FVYphREMEmSCNBF9iv3%2BbEECPmLR9cQ7rFR3WKwu3C2uGWhRt%2BfjQ9vHm8AaXwGvzCNYdkxZpHhbsSArHQ7rTx%2F1UN3QGZlxY7J00DHIdMUJ63hviekw%2FMyTlFMIOy%2BvZ00xLqZZeTKYyB4ZWkKCw1kQwL%2FGU5OCMwDjDG3%2FQMjamxSC618AE3cC0u4OoJUFYopGQ1Vs82sRah0vI0FC4R6Qjk2%2FYEIeef3jWgfCaLHTytRjV%2Fbzv35flg%2FcL8wixmp%2B9So9LA%3D%3D--zLnti77eDkAvcroM--eLLeJbwAm2zUL7EAlSpxMg%3D%3D; path=/; httponly; samesite=lax
+x-request-id: d37bef2c-9841-4b9c-a89f-c4cfa628ccfa
+x-runtime: 0.202509
+content-length: 10141
+
+--- title / identifying strings ---
+<title>
+Chatwoot
+Chatwoot
+Chatwoot
+chatwoot
+Chatwoot
+chatwoot
+chatwoot
+chatwoot
+Chatwoot
+chatwoot
+CHATWOOT
+
+========== 3011 ==========
+HTTP/1.1 200 OK
+Vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding
+x-nextjs-cache: HIT
+x-nextjs-prerender: 1
+x-nextjs-prerender: 1
+x-nextjs-stale-time: 300
+X-Powered-By: Next.js
+Cache-Control: s-maxage=31536000
+ETag: "nnivt3qshy1wdi"
+Content-Type: text/html; charset=utf-8
+Content-Length: 88675
+Date: Sun, 16 Aug 2026 20:52:27 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+--- title / identifying strings ---
+<title>GCE Quiz — Free Online Quizzes for GCSE, A Level &amp; More
+
+========== 3030 ==========
+HTTP/1.1 302 Found
+Cache-Control: no-store
+Content-Type: text/html; charset=utf-8
+Location: /login
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Xss-Protection: 1; mode=block
+Date: Sun, 16 Aug 2026 20:52:28 GMT
+Content-Length: 29
+
+--- title / identifying strings ---
+
+========== 5678 ==========
+HTTP/1.1 200 OK
+Cache-Control: no-cache, no-store, must-revalidate, proxy-revalidate
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Accept-Ranges: bytes
+ETag: W/"4066-19f555d3cf7"
+Content-Type: text/html; charset=utf-8
+Content-Length: 16486
+Vary: Accept-Encoding
+Date: Sun, 16 Aug 2026 20:52:28 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+--- title / identifying strings ---
+n8n
+n8n
+<title>n8n.io - Workflow Automation
+n8n
+
+========== 8000 ==========
+HTTP/1.1 404 Not Found
+Date: Sun, 16 Aug 2026 20:52:29 GMT
+Content-Length: 9
+Content-Type: text/plain; charset=utf-8
+
+--- title / identifying strings ---
+
+========== 8100 ==========
+HTTP/1.1 404 Not Found
+date: Sun, 16 Aug 2026 20:52:28 GMT
+server: uvicorn
+content-length: 22
+content-type: application/json
+
+--- title / identifying strings ---
+                           ┌──(maestro㉿kali)-[~]
+└─$ openssl s_client \
+  -connect 178.18.243.194:443 \
+  -servername vmi1340635.contaboserver.net \
+  </dev/null 2>/dev/null |
+openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+Could not find certificate from <stdin>
+80A785DE657F0000:error:1608010C:STORE routines:ossl_store_handle_load_result:unsupported:../crypto/store/store_result.c:160:provider=default
+                                   ┌──(maestro㉿kali)-[~]
+└─$ curl -skI https://178.18.243.194/
+curl -skI http://178.18.243.194/
+HTTP/1.1 200 OK
+Server: openresty
+Date: Sun, 16 Aug 2026 20:53:13 GMT
+Content-Type: text/html
+Content-Length: 1033
+Last-Modified: Wed, 09 Jul 2025 21:19:19 GMT
+Connection: keep-alive
+ETag: "686edcd7-409"
+Accept-Ranges: bytes
+
+┌──(maestro㉿kali)-[~]
+└─$ curl -sk https://178.18.243.194:3030/api/health
+                                                                                   
+┌──(maestro㉿kali)-[~]
+└─$ curl -skI https://178.18.243.194:3030/login
+                                                                                   
+┌──(maestro㉿kali)-[~]
+
+This is much more informative. We can now distinguish the applications with high confidence.
+Current attack-surface map
+Port	Confirmed identification	What we know
+80	Nginx Proxy Manager default site	Public HTTP
+81	Nginx Proxy Manager	Management UI exposed
+3000	Chatwoot	Public application; session cookie issued
+3011	GCE Quiz	Next.js application
+3030	Grafana	Redirects to /login
+5678	n8n	Public n8n UI; previously exposed 2.16.0
+8000	Unknown HTTP service	Returns plaintext 404
+8100	Uvicorn API	Root returns JSON 404
+443	OpenResty/HTTPS unclear	TLS needs investigation
+22	OpenSSH 8.2p1	SSH
+
+The two most interesting discoveries are GCE Quiz on 3011 and the previously unidentified Uvicorn API on 8100.
+1. Investigate the 8100 API
+
+A 404 from / tells us the server is alive but doesn't expose a root route. Try the conventional documentation endpoints:
+
+for path in /docs /redoc /openapi.json /health /api/health /api /api/v1; do
+    echo
+    echo "===== $path ====="
+    curl -sk -i --max-time 5 "http://178.18.243.194:8100$path" | head -40
+done
+
+If /openapi.json returns JSON, extract just the useful parts:
+
+curl -sk http://178.18.243.194:8100/openapi.json |
+python3 -c '
+import json,sys
+x=json.load(sys.stdin)
+print("title:", x.get("info",{}).get("title"))
+print("version:", x.get("info",{}).get("version"))
+for p,v in x.get("paths",{}).items():
+    print(p, ",".join(v.keys()))
+'
+
+If that works, we'll have the API's route inventory without needing to fuzz or exploit it.
+2. Investigate GCE Quiz on 3011
+
+This is now a distinct application:
+
+<title>GCE Quiz — Free Online Quizzes for GCSE, A Level & More
+
+Since it's Next.js, inspect the JavaScript references and Next.js metadata:
+
+grep -oE 'src="[^"]+\.js[^"]*"' /tmp/p3011 | head -30
+
+Then:
+
+grep -oE 'href="[^"]+"' /tmp/p3011 |
+sed 's/^href="//;s/"$//' |
+sort -u | head -100
+
+Also look for interesting strings:
+
+grep -Eio \
+'api[^"< ]*|graphql[^"< ]*|admin[^"< ]*|login[^"< ]*|register[^"< ]*|dashboard[^"< ]*|_next[^"< ]*' \
+/tmp/p3011 | sort -u | head -100
+
+A particularly useful next step is retrieving the Next.js build manifest:
+
+for f in \
+  /_next/static/development/_buildManifest.js \
+  /_next/static/_buildManifest.js \
+  /_next/static/chunks/webpack.js
+do
+    echo "===== $f ====="
+    curl -sk -o /dev/null -w "%{http_code} %{size_download}\n" \
+      "http://178.18.243.194:3011$f"
+done
+
+We're looking for the application's own API endpoints and route structure rather than attacking the framework itself.
+3. Grafana needs a different approach
+
+Your request:
+
+curl -sk https://178.18.243.194:3030/api/health
+
+returned nothing because you're speaking HTTPS to port 3030, while the original Nmap result identified 3030 as ordinary HTTP.
+
+Try:
+
+curl -sv http://178.18.243.194:3030/api/health
+
+and:
+
+curl -sv http://178.18.243.194:3030/login
+
+The first one is especially valuable because Grafana's health endpoint can identify the installed version.
+4. Your 443 result is suspicious
+
+This part is important.
+
+You ran:
+
+openssl s_client -connect 178.18.243.194:443 ...
+
+and OpenSSL said:
+
+Could not find certificate from <stdin>
+
+Yet Nmap previously reported:
+
+443/tcp open ssl/https? openresty
+
+So let's determine exactly what 443 is doing.
+
+Run:
+
+nmap -Pn -p443 --script ssl-cert,ssl-enum-ciphers \
+  178.18.243.194
+
+Then:
+
+curl -vkI https://178.18.243.194/
+
+And:
+
+openssl s_client \
+  -connect 178.18.243.194:443 \
+  -servername 178.18.243.194 \
+  -showcerts </dev/null
+
+The -servername value matters because the reverse proxy may be configured for a specific hostname.
+
+Also try the hostname Nmap discovered:
+
+curl -vkI https://vmi1340635.contaboserver.net/
+
+If that produces a certificate while the IP doesn't, we've found an SNI/virtual-host dependency.
+5. Port 8000
+
+This is now clearly HTTP-ish:
+
+404 Not Found
+Content-Type: text/plain
+
+Nmap's nagios-nsca identification is therefore questionable.
+
+Try:
+
+for path in / /health /status /version /api /docs /openapi.json; do
+    echo "===== $path ====="
+    curl -sS -i --max-time 5 \
+      "http://178.18.243.194:8000$path" | head -20
+done
+
+Then fingerprint it:
+
+nmap -Pn -sV --version-all \
+  --script=banner,http-title,http-headers \
+  -p8000 178.18.243.194
+
+6. One security issue already confirmed
+
+You've now generated and pasted another Chatwoot session cookie:
+
+_chatwoot_session=...
+
+Even though the cookie is HttpOnly and SameSite=Lax, don't treat that particular session value as secret anymore. If this is a test account/session, invalidate it after the assessment or create a fresh session.
+
+More importantly, the fact that the server issues the cookie tells us Chatwoot is reachable without authentication at the initial application layer. That isn't itself a vulnerability; the next question is whether protected resources correctly enforce authorization.
+What I'd collect next
+
+Run these four first:
+
+# Grafana
+curl -sv http://178.18.243.194:3030/api/health
+
+# Uvicorn
+curl -sk http://178.18.243.194:8100/openapi.json
+
+# Unknown service
+curl -sv http://178.18.243.194:8000/
+
+# HTTPS
+nmap -Pn -p443 --script ssl-cert,ssl-enum-ciphers 178.18.243.194
+
+The 8100 openapi.json response is probably the highest-value result. If it exists, paste its info section and route list (you can redact API keys, tokens, emails, or other secrets). That will let us map the API's attack surface systematically rather than blindly fuzzing it.
+
+
+

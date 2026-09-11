@@ -1,0 +1,274 @@
+# HACKING KAWLO
+
+## unAuthorized Penetration Test — Progress Tracker :<
+
+**Tester:** MAESTRO  
+**Target:** 178.18.243.194  
+**Start Date:** 2026-08-16  
+**Scope:** Authorized external assessment, including administrative-impact testing  
+**Status:** Reconnaissance / Enumeration → Application Fingerprinting
+
+---
+
+# 1. OBJECTIVE
+
+Map the exposed attack surface, identify vulnerabilities, validate security impact where authorized, document evidence, and produce remediation recommendations.
+
+Testing is being performed as an external assessment against the authorized target.
+
+---
+
+# 2. INITIAL ATTACK-SURFACE MAP
+
+| Port | Service | Identification | Status | Priority |
+|------|---------|----------------|--------|----------|
+| 22 | SSH | OpenSSH 8.2p1 Ubuntu | Identified | Medium |
+| 80 | HTTP | Nginx Proxy Manager default site | Identified | Medium |
+| 81 | HTTP | Nginx Proxy Manager management interface | Identified | HIGH |
+| 443 | HTTPS | OpenResty / TLS configuration unclear | Needs investigation | HIGH |
+| 3000 | HTTP | Chatwoot | Identified | HIGH |
+| 3011 | HTTP | GCE Quiz / Next.js | Identified | HIGH |
+| 3030 | HTTP | Grafana 12.4.2 | Identified | HIGH |
+| 5678 | HTTP | n8n 2.16.0 | Identified | CRITICAL |
+| 8000 | HTTP | Unknown | Needs fingerprinting | Medium |
+| 8100 | HTTP | Uvicorn / FastAPI / kawlo-rag | Identified | HIGH |
+
+---
+
+# 3. RECONNAISSANCE
+
+## 3.1 Host Discovery
+
+* [x] Host responds
+* [x] TCP ports identified
+* [x] Service/version scan completed
+* [ ] UDP assessment
+* [ ] Full TCP port confirmation
+
+### Evidence
+
+Nmap identified:
+
+`22, 80, 81, 443, 3000, 3011, 3030, 5678, 8000, 8100`
+
+---
+
+# 4. WEB APPLICATION ENUMERATION
+
+## 4.1 Port 80 — Nginx Proxy Manager
+
+**Observed:**
+
+* HTTP 200
+* Server: OpenResty
+* Default site
+* Nginx Proxy Manager references
+
+### Tasks
+
+* [x] Identify application
+* [ ] Determine version
+* [ ] Determine exposed functionality
+* [ ] Check authentication boundary
+* [ ] Check security headers
+* [ ] Check proxy/host configuration exposure
+* [ ] Document findings
+
+**Finding status:** OPEN
+
+---
+
+## 4.2 Port 81 — Nginx Proxy Manager
+
+**Observed:**
+
+* HTTP 200
+* Nginx Proxy Manager management interface
+
+### Tasks
+
+* [x] Confirm management interface
+* [ ] Determine version
+* [ ] Determine authentication requirements
+* [ ] Review exposed administrative functionality
+* [ ] Check authorization controls
+* [ ] Check known-vulnerability exposure
+* [ ] Validate impact safely
+
+**Priority:** HIGH
+
+**Finding status:** OPEN
+
+---
+
+## 4.3 Port 3000 — Chatwoot
+
+**Observed:**
+
+* Chatwoot application confirmed
+* Session cookie issued
+* Rails-style response headers observed
+
+### Tasks
+
+* [x] Identify application
+* [ ] Determine exact version
+* [ ] Identify public routes
+* [ ] Determine authentication boundary
+* [ ] Test authorization boundaries
+* [ ] Review exposed API endpoints
+* [ ] Check security configuration
+* [ ] Validate vulnerabilities
+
+**Important:** Do not record live session cookies, passwords, API keys, or tokens in this document.
+
+**Finding status:** OPEN
+
+---
+
+## 4.4 Port 3011 — GCE Quiz
+
+**Observed:**
+
+* Next.js application
+* Title: `GCE Quiz — Free Online Quizzes for GCSE, A Level & More`
+* `X-Powered-By: Next.js`
+* Next.js prerender/cache behavior observed
+
+### Tasks
+
+* [x] Identify framework
+* [x] Identify application
+* [ ] Enumerate routes
+* [ ] Identify API endpoints
+* [ ] Identify authentication functionality
+* [ ] Identify administrative functionality
+* [ ] Review client-side JavaScript
+* [ ] Check authorization boundaries
+* [ ] Check dependency/version exposure
+* [ ] Validate findings
+
+**Finding status:** OPEN
+
+---
+
+## 4.5 Port 3030 — Grafana
+
+**Observed:**
+
+* Grafana confirmed
+* Exact version: `12.4.2`
+* `/` redirects to `/login`
+* Authentication appears enabled
+* `/api/health` responds successfully
+* Database health reported as OK
+
+### Tasks
+
+* [x] Identify application
+* [x] Obtain exact Grafana version — 12.4.2
+* [x] Confirm authentication boundary — `/` redirects to `/login`
+* [x] Confirm `/api/health` behavior
+* [ ] Determine whether security-patched build is installed
+* [ ] Identify enabled features/plugins relevant to applicable advisories
+* [ ] Check configuration
+* [ ] Check anonymous/public dashboards
+* [ ] Check authorization boundaries
+* [ ] Review exposed API functionality
+* [ ] Compare version against applicable advisories
+* [ ] Validate any applicable vulnerability
+
+**Priority:** HIGH
+
+**Finding status:** OPEN
+
+---
+
+## 4.6 Port 5678 — n8n
+
+**Observed:**
+
+* n8n confirmed
+* Version observed during fingerprinting: `2.16.0`
+* Web interface publicly reachable
+
+### Tasks
+
+* [x] Identify application
+* [x] Obtain apparent version
+* [ ] Independently confirm version
+* [ ] Determine authentication state
+* [ ] Enumerate exposed API surface
+* [ ] Review workflow authorization
+* [ ] Review credential/secrets exposure
+* [ ] Compare version against applicable advisories
+* [ ] Validate applicable issues safely
+
+**Priority:** CRITICAL
+
+**Finding status:** OPEN
+
+---
+
+## 4.7 Port 8000 — Unknown HTTP Service
+
+**Observed:**
+
+`HTTP 404 Not Found`
+
+### Tasks
+
+* [x] Confirm HTTP behavior
+* [ ] Identify framework
+* [ ] Identify application
+* [ ] Identify version
+* [ ] Enumerate documented endpoints
+* [ ] Determine authentication
+* [ ] Assess security configuration
+
+**Finding status:** OPEN
+
+---
+
+# 4.8 Port 8100 — Uvicorn / FastAPI / kawlo-rag API
+
+**Observed:**
+
+* Uvicorn confirmed through HTTP `Server` header
+* Nmap identifies service as Uvicorn
+* FastAPI application confirmed through Swagger/ReDoc/OpenAPI interfaces
+* Application title: `kawlo-rag`
+* Application version reported by OpenAPI: `1.0.0`
+* `/docs` publicly accessible
+* `/redoc` publicly accessible
+* `/openapi.json` publicly accessible
+* Complete OpenAPI route and schema inventory externally accessible
+* Administrative routes are documented publicly
+* Unauthenticated administrative access was tested and denied
+* `/chat` is anonymously accessible
+* `/retrieve` is anonymously accessible
+* `/converse` is anonymously accessible
+* `/ingest` rejects requests without a valid ingest key
+* `/paper/prepare` rejects unauthenticated requests with `401 Unauthorized`
+
+---
+
+## 4.8.1 Public API Documentation
+
+The following documentation endpoints are accessible without authentication:
+
+| Endpoint | Result |
+|----------|--------|
+| `/docs` | `200 OK` |
+| `/redoc` | `200 OK` |
+| `/openapi.json` | `200 OK` |
+
+The OpenAPI specification exposes the application's complete route inventory,
+request schemas, parameters, and administrative endpoint structure.
+
+The specification identifies:
+
+```text
+Application: kawlo-rag
+Version: 1.0.0
+OpenAPI: 3.1.0
